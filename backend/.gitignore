@@ -1,0 +1,12 @@
+node_modules/
+frontend_old/
+backend.zip
+backend/venv/
+backend/__pycache__/
+backend/app/__pycache__/
+backend/.env
+*.pyc
+*.db
+*.sqlite
+*.sqlite3
+dist/
