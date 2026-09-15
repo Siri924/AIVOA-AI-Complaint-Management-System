@@ -5,7 +5,7 @@ from uuid import uuid4
 from io import BytesIO
 
 from app.agent import process_with_llm
-from app.database import SessionLocal
+from app.database import SessionLocal, Base, engine
 from app.models import ComplaintRecord
 
 try:
@@ -13,7 +13,12 @@ try:
 except ImportError:
     PdfReader = None
 
+
 app = FastAPI(title="AIVOA AI-Powered Customer Complaint Management System")
+
+# Create all SQLAlchemy tables in PostgreSQL
+Base.metadata.create_all(bind=engine)
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -91,8 +96,12 @@ async def process_complaint_pdf(
 
     try:
         pdf_bytes = await file.read()
+
         if not pdf_bytes:
-            raise HTTPException(status_code=400, detail="The uploaded PDF is empty.")
+            raise HTTPException(
+                status_code=400,
+                detail="The uploaded PDF is empty."
+            )
 
         reader = PdfReader(BytesIO(pdf_bytes))
         pages = []
@@ -121,6 +130,7 @@ async def process_complaint_pdf(
 
     except HTTPException:
         raise
+
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -131,6 +141,7 @@ async def process_complaint_pdf(
 @app.post("/api/complaints/commit")
 def commit_complaint(payload: CommitRequest):
     db = SessionLocal()
+
     try:
         ticket_id = "CMP-" + uuid4().hex[:8].upper()
 
@@ -171,6 +182,7 @@ def commit_complaint(payload: CommitRequest):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
     finally:
         db.close()
 
@@ -178,6 +190,7 @@ def commit_complaint(payload: CommitRequest):
 @app.get("/api/complaints")
 def get_complaints():
     db = SessionLocal()
+
     try:
         complaints = (
             db.query(ComplaintRecord)
@@ -185,6 +198,7 @@ def get_complaints():
             .all()
         )
         return complaints
+
     finally:
         db.close()
 
@@ -192,6 +206,7 @@ def get_complaints():
 @app.get("/api/complaints/{ticket_id}")
 def get_complaint(ticket_id: str):
     db = SessionLocal()
+
     try:
         complaint = (
             db.query(ComplaintRecord)
@@ -206,5 +221,6 @@ def get_complaint(ticket_id: str):
             )
 
         return complaint
+
     finally:
         db.close()
