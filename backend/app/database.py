@@ -3,15 +3,13 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-SQLALCHEMY_DATABASE_URL = os.getenv("postgresql://aivoa_k39b_user:EcxovGrFPvkBh6MYGGlh9DbG8VRWh4W0@dpg-dakp5am1egvs738c8r2g-a/aivoa_k39b")
-
-if not SQLALCHEMY_DATABASE_URL:
+if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL environment variable is not set")
 
-
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
+    DATABASE_URL,
     pool_pre_ping=True,
 )
 
