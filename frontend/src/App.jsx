@@ -9,6 +9,23 @@ import {
 
 import "./App.css";
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+
+function apiUrl(path) {
+  return `${API_BASE_URL}${path}`;
+}
+
+function getApiErrorMessage(data, fallback) {
+  if (typeof data?.detail === "string") return data.detail;
+  if (Array.isArray(data?.detail)) {
+    return data.detail
+      .map((err) => err?.msg || err?.message || String(err))
+      .join(", ");
+  }
+  if (typeof data?.message === "string") return data.message;
+  return fallback;
+}
+
 function App() {
   const [customerName, setCustomerName] = useState("");
   const [complaintText, setComplaintText] = useState("");
@@ -38,7 +55,7 @@ function App() {
 
     try {
       const response = await fetch(
-         `${import.meta.env.VITE_API_URL}/api/complaints/commit`,
+         apiUrl("/api/complaints/process"),
         {
           method: "POST",
           headers: {
@@ -55,7 +72,7 @@ function App() {
 
       if (!response.ok) {
         throw new Error(
-          data.detail || "Failed to process complaint"
+          getApiErrorMessage(data, "Failed to process complaint")
         );
       }
 
@@ -91,7 +108,7 @@ function App() {
       formData.append("customer_name", customerName);
 
       const response = await fetch(
-        "http://127.0.0.1:8000/api/complaints/process-pdf",
+        apiUrl("/api/complaints/process-pdf"),
         {
           method: "POST",
           body: formData,
@@ -102,7 +119,7 @@ function App() {
 
       if (!response.ok) {
         throw new Error(
-          data.detail || "Failed to process PDF complaint"
+          getApiErrorMessage(data, "Failed to process PDF complaint")
         );
       }
 
@@ -123,12 +140,12 @@ function App() {
     setLedgerLoading(true);
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/api/complaints"
+        apiUrl("/api/complaints")
       );
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.detail || "Failed to load complaint history");
+        throw new Error(getApiErrorMessage(data, "Failed to load complaint history"));
       }
 
       setLedger(data);
@@ -145,7 +162,7 @@ function App() {
 
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/api/complaints/commit",
+        apiUrl("/api/complaints/commit"),
         {
           method: "POST",
           headers: {
@@ -177,7 +194,7 @@ function App() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.detail || "Failed to commit complaint");
+        throw new Error(getApiErrorMessage(data, "Failed to commit complaint"));
       }
 
       alert(`Complaint committed successfully!\nTicket ID: ${data.ticket_id}`);
